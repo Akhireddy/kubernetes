@@ -1,0 +1,41 @@
+node {
+    
+    stage("Git Clone"){
+        
+        git credentialsId: 'GIT_CREADITIONAL', url: 'https://akhir1989@bitbucket.org/akhir1989/kubejenkins.git'
+    }
+    
+    stage("Docker build"){
+        sh 'docker version'
+        sh 'docker build -t akhihttp .'
+        sh 'docker image list'
+        sh 'docker tag akhihttp akhir/akhihttp:7'
+    }
+    
+    stage("Docker Login"){
+        withCredentials([string(credentialsId: 'DOCKER_HUB_PASSWORD', variable: 'PASSWORD')]){
+            sh 'docker login -u akhir -p $PASSWORD'
+        }
+    }
+    
+    stage("Push Image to Docker Hub"){
+        sh 'docker push akhir/akhihttp:7'
+    }
+    
+    stage("SSH into K8s server"){
+        def remote = [:]
+        remote.name = 'instance-2'
+        remote.host = '34.125.112.180'
+        remote.user = 'akhigcp'
+        remote.password = 'akhigcp'
+        remote.allowAnyHosts = true
+        
+        stage('Put jenkins.yaml onto k8smaster') {
+            sshPut remote: remote, from: 'jenkins.yaml', into: '.'
+        }
+        
+        stage('Deploy httpd') {
+            sshCommand remote: remote, command: "kubectl apply -f jenkins.yaml"
+        }
+    }
+}

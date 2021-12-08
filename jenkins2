@@ -1,0 +1,35 @@
+node {
+
+    stage("Git Clone"){
+
+        git credentialsId: 'GIT_CREADITIONAL', url: 'https://akhir1989@bitbucket.org/akhir1989/kubejenkins.git'
+    }
+
+    stage("Docker build"){
+        sh 'docker version'
+        sh 'docker build -t akhihttp .'
+        sh 'docker image list'
+        sh 'docker tag akhihttp akhir/akhihttp:7'
+    }
+
+    stage("Docker Login"){
+        withCredentials([string(credentialsId: 'DOCKER_HUB_PASSWORD', variable: 'PASSWORD')]){
+            sh 'docker login -u akhir -p $PASSWORD'
+        }
+    }
+
+    stage("Push Image to Docker Hub"){
+        sh 'docker push akhir/akhihttp:7'
+    }
+
+    stage('Deploy app') {
+      steps{
+        script {
+          kubernetesDeploy(configs: "jenkins.yaml", kubeconfigId: "mykubeconfig")
+        }
+    }
+
+  }
+
+}
+

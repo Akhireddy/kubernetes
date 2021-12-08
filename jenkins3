@@ -1,0 +1,20 @@
+pipeline {
+
+  stages {
+
+    stage('Checkout Source') {
+      steps {
+        git url:'https://akhir1989@bitbucket.org/akhir1989/kubejenkins.git'
+      }
+    }
+
+    stage('Deploy app') {
+      steps{
+        script {
+          kubernetesDeploy(configs: "jenkins.yaml", kubeconfigId: "mykubeconfig")
+        }
+    }
+
+  }
+
+}
